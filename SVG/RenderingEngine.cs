@@ -69,7 +69,18 @@ namespace SVG {
             Path.AddLines(points);
         }
         void SmoothQuadraticBezierCurveToCore(MoveToCommandArgs args) {
-
+            Location curveEndLocation = args.Locations[0];
+            Location curveControlLocation;
+            if(args.PathLocationInfo.HasSavedLastCurveLocations(PathLocationInfo.CurveType.Quadratic)) {
+                curveControlLocation = args.PathLocationInfo.CalcCurveControlPoint(curveEndLocation); 
+            }
+            else {
+                PointF actualLocation = args.PathLocationInfo.GetActualLocation(args.UseRelativeCoordinates);
+                curveControlLocation = new Location(actualLocation, args.CommandType, args.PathLocationInfo, args.UseRelativeCoordinates);
+            }
+            Location[] locations = { curveControlLocation, curveEndLocation };
+            MoveToCommandArgs totalArgs = new MoveToCommandArgs(args.CommandType, locations, args.PathLocationInfo);
+            QuadraticBezierCurveToCore(totalArgs);
         }
         void SmoothCubicBezierCurveToCore(MoveToCommandArgs args) {
             Location[] locations = new Location[args.Locations.Length + 1];
@@ -110,7 +121,6 @@ namespace SVG {
                 curveRenderMethod(newArgs);
             }
         }
-        
         Action<MoveToCommandArgs> GetCurveRenderMethod(MoveToCommandArgs args, out int nLocations) {
             switch(args.CommandType) {
                 case PathCommandType.CurveTo:
