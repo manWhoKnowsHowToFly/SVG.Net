@@ -71,7 +71,7 @@ namespace SVG {
         void SmoothQuadraticBezierCurveToCore(MoveToCommandArgs args) {
 
         }
-        void SmoothCubicBezierCurveToCore(MoveToCommandArgs args) {
+        void SmoothCubicBezierCurveToCore(MoveToCommandArgs args) {//
             Location[] locations = new Location[args.Locations.Length + 1];
             Location secondCurveControlLocation;
             if(args.PathLocationInfo.HasSavedLastCurveLocations(PathLocationInfo.CurveType.Cubic)) {
