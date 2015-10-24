@@ -34,7 +34,7 @@ namespace SVG {
     public class PathLocationInfo {
         PointF absLocation = PointF.Empty;
         PointF relLocation = PointF.Empty;
-        PointF[] lastCurveLocations = new PointF[2];
+        PointF[] lastCurveLocations;
         CurveType lastCurveOperationType;
         public PointF GetActualLocation(Location location) {
             Update(location);
@@ -66,6 +66,13 @@ namespace SVG {
                 location.X = assignLocation.X;
             if((assignLocation.UnitType & LocationUnitType.Y) != 0)
                 location.Y = assignLocation.Y;
+        }
+        public virtual void UpdateLastCurveControlPoints(CurveType curveType) {
+            lastCurveOperationType = curveType;
+        }
+        public virtual void UpdateLastCurveControlPoints(CurveType curveType , params PointF[] controlPoints) {
+            lastCurveOperationType = curveType;
+            lastCurveLocations = controlPoints;
         }
         public virtual bool HasSavedLastCurveLocations(CurveType curveType) {
             return curveType == lastCurveOperationType;

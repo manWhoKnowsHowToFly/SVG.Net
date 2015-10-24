@@ -61,12 +61,14 @@ namespace SVG {
                 Array.Copy(args.Locations, 1, locations, 0, length);
                 LineTo(new MoveToCommandArgs(args.CommandType, locations));
             }
+            LocationInfo.UpdateLastCurveControlPoints(PathLocationInfo.CurveType.None);
         }
         public void LineTo(MoveToCommandArgs args) {
             PointF[] points = new PointF[args.Locations.Length + 1];
             points[0] = LocationInfo.GetActualLocation(args.UseRelativeCoordinates);
             args.Locations.CopyTo(points, 1);
             Path.AddLines(points);
+            LocationInfo.UpdateLastCurveControlPoints(PathLocationInfo.CurveType.None);
         }
         void SmoothQuadraticBezierCurveToCore(MoveToCommandArgs args) {
             Location curveEndLocation = args.Locations[0];
@@ -83,18 +85,17 @@ namespace SVG {
             QuadraticBezierCurveToCore(totalArgs);
         }
         void SmoothCubicBezierCurveToCore(MoveToCommandArgs args) {
-            Location[] locations = new Location[args.Locations.Length + 1];
-            Location secondCurveControlLocation;
+            Location firstCurveControlLocation;
+            Location secondCurveControlLocation = args.Locations[args.Locations.Length - 2];
+            Location endCurveLocation = args.Locations[args.Locations.Length - 1];
             if(args.PathLocationInfo.HasSavedLastCurveLocations(PathLocationInfo.CurveType.Cubic)) {
-                secondCurveControlLocation = args.PathLocationInfo.CalcCurveControlPoint(args.Locations[args.Locations.Length - 1], args.Locations[args.Locations.Length - 2]);
+                firstCurveControlLocation = args.PathLocationInfo.CalcCurveControlPoint(endCurveLocation, secondCurveControlLocation);
             }
             else {
                 PointF actualLocation = args.PathLocationInfo.GetActualLocation(args.UseRelativeCoordinates);
-                secondCurveControlLocation = new Location(actualLocation, args.CommandType, args.PathLocationInfo, args.UseRelativeCoordinates);
+                firstCurveControlLocation = new Location(actualLocation, args.CommandType, args.PathLocationInfo, args.UseRelativeCoordinates);
             }
-            Array.ConstrainedCopy(args.Locations, 0, locations, 0, args.Locations.Length - 1);
-            locations[args.Locations.Length - 1] = secondCurveControlLocation;
-            locations[args.Locations.Length] = args.Locations[args.Locations.Length - 1];
+            Location[] locations = { firstCurveControlLocation, secondCurveControlLocation, endCurveLocation };
             MoveToCommandArgs newArgs = new MoveToCommandArgs(args.CommandType, locations);
             CubicBezierCurveToCore(newArgs);
         }
@@ -103,6 +104,7 @@ namespace SVG {
             points[0] = LocationInfo.GetActualLocation(args.UseRelativeCoordinates);
             args.Locations.CopyTo(points, 1);
             Path.AddBeziers(points);
+            LocationInfo.UpdateLastCurveControlPoints(PathLocationInfo.CurveType.Cubic, points[points.Length - 2]);
         }
         protected virtual void QuadraticBezierCurveToCore(MoveToCommandArgs args) {
             PointF[] points = new PointF[args.Locations.Length + 2];
@@ -110,6 +112,7 @@ namespace SVG {
             args.Locations.CopyTo(points, 1);
             points[points.Length - 1] = points[points.Length - 2];
             Path.AddBeziers(points);
+            LocationInfo.UpdateLastCurveControlPoints(PathLocationInfo.CurveType.Quadratic, points[0], points[1]);
         }
         public void CurveTo(MoveToCommandArgs args) {
             int nLocations;
